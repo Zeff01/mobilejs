@@ -1,0 +1,14 @@
+{
+  "plugins": ["react-native"],
+  "extends": ["universe/native", "plugin:react-native/all"],
+  "rules": {
+    // "import/no-unused-modules": [1, { "unusedExports": true }],
+    "react-native/no-unused-styles": 2,
+    "react-native/split-platform-components": 0,
+    "react-native/no-inline-styles": 0,
+    "react-native/no-color-literals": 0,
+    "react-native/no-raw-text": 2,
+    "react-native/no-single-element-style-arrays": 2,
+    "import/order": 0
+  }
+}
