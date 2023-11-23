@@ -12,6 +12,10 @@ import {
 import { Block, Button, Card, Icon, Modal, Text, User } from "../../components";
 import { COLORS, mock, SIZES } from "../../constants";
 import { useStaturBar } from "../../utils/hooks";
+import useAuthStore from '../../store/auth/authStore';
+import useToken from "../../hooks/useToken";
+
+
 
 const TABS = [
   { id: "posts", title: "Posts" },
@@ -76,7 +80,7 @@ const Post = ({ post, ...props }) => {
         }}
       >
         <Block row center marginTop={40} marginBottom={60}>
-          <TouchableOpacity activeOpacity={0.9} onPress={() => {}}>
+          <TouchableOpacity activeOpacity={0.9} onPress={() => { }}>
             <Block row center marginRight={28}>
               <Icon name="heartOutlined" color={COLORS.error} size={14} />
               <Text white title semibold marginLeft={5}>
@@ -98,7 +102,7 @@ const Post = ({ post, ...props }) => {
               </Text>
             </Block>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.9} onPress={() => {}}>
+          <TouchableOpacity activeOpacity={0.9} onPress={() => { }}>
             <Block row center>
               <Icon name="share" color={COLORS.white} size={14} />
               <Text white title semibold marginLeft={5}>
@@ -112,7 +116,7 @@ const Post = ({ post, ...props }) => {
   );
 };
 
-const Posts = ({ stories = mock.STORIES, onScroll = () => {} }) => {
+const Posts = ({ stories = mock.STORIES, onScroll = () => { } }) => {
   const [post, setPost] = React.useState(false);
 
   return (
@@ -323,11 +327,29 @@ const MyProfile = ({ navigation, user = mock.USER }) => {
   const [showOptions, setShowOptions] = React.useState(false);
   const scrollY = React.useRef(new Animated.Value(0)).current;
 
+
+  const { removeToken, initializeToken } = useAuthStore();
+  const tokenz = useAuthStore((state) => state.token);
+
+
+  const { token, deleteToken } = useToken()
+
+
+
+  const handleLogout = async () => {
+    console.log("TOKEN FROM ZUSTAND", tokenz)
+    console.log("TOKEN FROM SECURESTORE:", token)
+
+    await removeToken();
+    await deleteToken()
+  };
+
+
   // use at your own risk
   // hide the tabBar based on scrollY value
   React.useEffect(() => {
     scrollY.addListener(({ value }) => setHideBar(value <= 0));
-    return scrollY.removeListener();
+    // return scrollY.removeListener();
   }, [scrollY]);
 
   React.useEffect(() => {
@@ -347,6 +369,11 @@ const MyProfile = ({ navigation, user = mock.USER }) => {
             transparent
             onPress={() => setShowOptions(true)}
             icon={<Icon name="options" color={COLORS.white} />}
+          />
+          <Button
+            danger
+            onPress={handleLogout}
+            icon={<Icon name="logout" color={COLORS.white} />}
           />
         </Block>
       </Block>
@@ -447,6 +474,7 @@ const MyProfile = ({ navigation, user = mock.USER }) => {
               <Icon name="settings" color={COLORS.white} />
             </Block>
           </Button>
+
         </Block>
         <Block
           animated

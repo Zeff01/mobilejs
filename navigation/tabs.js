@@ -9,7 +9,6 @@ import { getHeaderTitle, getHeaderButtons } from "../utils/helpers";
 
 // import screens
 import { Home, Events, NewPost, Threads, MyProfile } from "../screens/";
-import AiVideo from "../screens/AiModules/AiVideo";
 import AiModules from "../screens/AiModules/AiModulesHome";
 
 const Tab = createBottomTabNavigator();

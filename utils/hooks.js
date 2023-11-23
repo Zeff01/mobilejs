@@ -8,7 +8,6 @@ export const useKeyboard = () => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   function onKeyboardDidShow(e) {
-    console.log("e:", e);
     setKeyboardHeight(e.endCoordinates.height);
   }
 

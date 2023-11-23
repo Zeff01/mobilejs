@@ -175,7 +175,6 @@ const Message = ({ item }) => {
 };
 
 const MessageInput = ({ value, ...props }) => {
-  console.log("value:", value);
   return (
     <Block padding={[0, 24, 24, 24]}>
       <Block
@@ -186,7 +185,7 @@ const MessageInput = ({ value, ...props }) => {
         padding={16}
         color={COLORS.lightGray}
       >
-        <Button style={styles.inputButton} onPress={() => {}}>
+        <Button style={styles.inputButton} onPress={() => { }}>
           <Icon size={12} name="plus" />
         </Button>
         <Input
@@ -197,7 +196,7 @@ const MessageInput = ({ value, ...props }) => {
           placeholderTextColor={COLORS.gray}
           {...props}
         />
-        <Button transparent style={styles.inputButton} onPress={() => {}}>
+        <Button transparent style={styles.inputButton} onPress={() => { }}>
           <Icon name="emoji" color={COLORS.gray} />
         </Button>
       </Block>
@@ -208,9 +207,14 @@ const MessageInput = ({ value, ...props }) => {
 const Chat = ({ route, navigation, user = mock.USER }) => {
   const [keyboardHeight] = useKeyboard();
   const [message, setMessage] = React.useState("");
+
   const inputRef = React.useRef(null);
 
-  const { type } = route?.params;
+  const { type, userInfo } = route.params;
+
+
+  const deserializedUserId = JSON.parse(userInfo);
+
   const isGroup = type === "group";
   const messages = isGroup ? mock.CHAT_GROUP : mock.CHAT_SIMPLE;
 
@@ -219,9 +223,9 @@ const Chat = ({ route, navigation, user = mock.USER }) => {
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerTitleAlign: "left",
-      headerTitle: () => <User user={user} white />,
+      headerTitle: () => <User user={deserializedUserId.from} white />,
     });
-  }, [navigation, route]);
+  }, [navigation, route, userInfo]);
 
   React.useEffect(() => {
     if (keyboardHeight > 0) {

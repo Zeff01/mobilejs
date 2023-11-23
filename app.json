@@ -18,13 +18,19 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "googleServicesFile": "./google-services.json"
     },
     "extra": {
       "WHISPER_API_ENDPOINT": "https://api.openai.com/v1/audio/transcriptions",
       "TTS_API_ENDPOINT": "https://api.openai.com/v1/audio/speech",
       "CHAT_API_ENDPOINT": "https://api.openai.com/v1/chat/completions",
-      "OPENAI_API_KEY": "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"
-    }
+      "OPENAI_API_KEY": "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",
+      "CHINGU_BASE_ENDPOINT": "https://api-uat.chingu.fun"
+    },
+    "plugins": ["@react-native-google-signin/google-signin"]
   }
 }

@@ -8,6 +8,13 @@ import { images, icons, COLORS, SIZES } from "../../constants";
 
 import deviceSize from "../../utils/deviceSize";
 import { useStaturBar } from "../../utils/hooks";
+import Constants from "expo-constants";
+import axios from 'axios';
+
+const {
+  CHINGU_BASE_ENDPOINT,
+} = Constants.expoConfig.extra;
+
 
 // Custom RATION
 const RATION = {

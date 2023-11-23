@@ -13,7 +13,7 @@ const MESSAGES_TABS = [
   { id: "archived", title: "Archived" },
 ];
 
-const Header = ({ onPress = () => {} }) => {
+const Header = ({ onPress = () => { } }) => {
   const [tab, setTab] = React.useState("direct");
 
   useStaturBar();
@@ -68,11 +68,19 @@ const Header = ({ onPress = () => {} }) => {
 const Preview = ({ item, isGroup, filter }) => {
   const navigation = useNavigation();
 
+
+  const serializedItem = JSON.stringify(item);
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      onPress={() => navigation.navigate("Chat", { type: filter })}
+      onPress={() =>
+        navigation.navigate("Chat", {
+          type: filter,
+          userInfo: serializedItem
+        })
+      }
     >
+
       <Block row marginHorizontal={24} marginBottom={32}>
         <Block noflex center>
           {isGroup ? (
@@ -124,7 +132,7 @@ const Preview = ({ item, isGroup, filter }) => {
           {item?.unread > 0 && (
             <Block error center middle radius={6} width={18} maxHeight={18}>
               <Text small white>
-                {item?.unread}sss
+                {item?.unread}
               </Text>
             </Block>
           )}

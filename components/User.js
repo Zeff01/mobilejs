@@ -6,20 +6,23 @@ import Text from "./Text";
 import { COLORS } from "../constants/";
 
 export default ({ user, white = false }) => {
-  if (!user) return null;
 
+  if (!user) return null;
+  const userInfo = user && user[0] ? user[0] : null;
+
+  if (!userInfo) return null;
   return (
     <Block row>
       <Block noflex marginLeft marginRight>
-        <Image source={user?.avatar} style={styles.avatar} />
+        <Image source={userInfo?.avatar} style={styles.avatar} />
         <Block success style={styles.status} />
       </Block>
       <Block>
         <Text title medium white={white}>
-          {user?.name}
+          {userInfo?.name}
         </Text>
         <Text title medium gray>
-          {user?.online ? "Online" : "Offline"}
+          {userInfo?.online ? "Online" : "Offline"}
         </Text>
       </Block>
     </Block>

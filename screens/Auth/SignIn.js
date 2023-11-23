@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { StyleSheet, Image, ImageBackground, StatusBar } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Utils } from "expo-ui-kit";
@@ -8,6 +8,25 @@ import { icons, images, COLORS, SIZES } from "../../constants/";
 
 import deviceSize from "../../utils/deviceSize";
 import { useStaturBar } from "../../utils/hooks";
+import Constants from "expo-constants";
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+// import { GoogleSignin } from '@react-native-google-signin/google-signin';
+// import firebase from 'firebase';
+import KakaoLogins from '@react-native-seoul/kakao-login';
+import useToken from '../../hooks/useToken'
+import useAuthStore from "../../store/auth/authStore";
+
+
+const {
+  CHINGU_BASE_ENDPOINT,
+} = Constants.expoConfig.extra;
+
+// GoogleSignin.configure({
+//   webClientId: 'YOUR_GOOGLE_WEB_CLIENT_ID',
+// });
+
+
 
 // Custom RATION
 const RATION = {
@@ -24,19 +43,110 @@ const SignIn = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [validEmail, setValidEmail] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   useStaturBar("light-content");
 
-  const handleLogin = useCallback(() => {
-    // login with email & password
-    navigation.navigate("Home", { screen: "Dashboard" });
+  const { saveToken } = useToken();
+  const { setToken } = useAuthStore()
+
+
+
+
+  const handleGoogleLogin = async () => {
+    // try {
+    //   await GoogleSignin.hasPlayServices();
+    //   const userInfo = await GoogleSignin.signIn();
+    //   const token = userInfo.idToken;
+
+    //   // Send the token to your backend
+    //   await axios.post(`${CHINGU_BASE_ENDPOINT}/google`, { token });
+    //   // Handle the response...
+    // } catch (error) {
+    //   console.error(error);
+    // }
+  };
+  const signInWithGoogle = async () => {
+    // try {
+    //   const { idToken } = await GoogleSignin.signIn();
+    //   const googleCredential = firebase.auth.GoogleAuthProvider.credential(idToken);
+    //   return firebase.auth().signInWithCredential(googleCredential);
+    // } catch (error) {
+    //   console.error(error);
+    // }
+  };
+
+  const handleKakaoLogin = async () => {
+    try {
+      const result = await KakaoLogins.login();
+      const token = result.accessToken;
+
+      // Send the token to your backend
+      await axios.post(`${CHINGU_BASE_ENDPOINT}/auth/kakao`, { token });
+      // Handle the response...
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+
+
+  const handleLogin = useCallback(async () => {
+    let isValid = true;
+    // Reset errors
+    setEmailError('');
+    setPasswordError('');
+    // Validate email
+    if (!email) {
+      setEmailError('Email is required');
+      isValid = false;
+    } else if (!validEmail) {
+      setEmailError('Invalid email format');
+      isValid = false;
+    }
+
+    // Validate password
+    if (!password) {
+      setPasswordError('Password is required');
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
+
+    try {
+      const response = await axios.post(`${CHINGU_BASE_ENDPOINT}/auth/login`, {
+        email: email,
+        password: password,
+        client: "mobileApp"
+      });
+
+
+      const token = response.data.data.token;
+      setToken(token)
+      // saveToken(token);
+
+      // navigation.navigate("Home");
+
+    } catch (error) {
+      // Handle error (e.g., invalid credentials, server error)
+      console.error(error);
+    }
   });
+
+  // const logout = async () => {
+  //   await SecureStore.deleteItemAsync('user_token');
+  //   // Navigate to login screen or other appropriate action
+  // };
+
 
   return (
     <KeyboardAwareScrollView
       showsVerticalScrollIndicator={false}
       extraScrollHeight={SIZES.height * 0.2}
-      contentContainerStyle={{ paddingBottom: 68 }}
+      contentContainerStyle={{ paddingBottom: 100 }}
     >
       <Block>
         <StatusBar barStyle="light-content" />
@@ -89,10 +199,11 @@ const SignIn = ({ navigation }) => {
               }
             />
             <Button
+              onPress={handleGoogleLogin}
               flex
               outlined
               color={COLORS.gray}
-              style={{ height: "auto" }}
+              style={{ marginRight: 11, height: "auto" }}
               icon={
                 <Icon
                   name="google"
@@ -101,13 +212,26 @@ const SignIn = ({ navigation }) => {
                 />
               }
             />
+            <Button
+              onPress={handleKakaoLogin}
+              flex
+              color='yellow'
+              style={{ marginRight: 11, height: "auto" }}
+              icon={
+                <Icon
+                  name="kakao"
+                  color={COLORS.black}
+                  style={{ marginVertical: 20 }}
+                />
+              }
+            />
           </Block>
 
-          <Text center gray caption margin={18}>
+          <Text center gray caption margin={10}>
             Or connect with your email
           </Text>
 
-          <Block noflex marginBottom={18}>
+          <Block noflex marginBottom={10}>
             <Block row space="between">
               <Text caption bold marginBottom={10}>
                 EMAIL
@@ -132,9 +256,14 @@ const SignIn = ({ navigation }) => {
               onValidation={(isValid) => setValidEmail(isValid)}
               pattern='^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$'
             />
+            {emailError && (
+              <Text caption error marginBottom={10}>
+                {emailError}
+              </Text>
+            )}
           </Block>
-          <Block noflex marginBottom={18}>
-            <Text caption bold marginBottom={10}>
+          <Block noflex marginBottom={10}>
+            <Text caption bold>
               PASSWORD
             </Text>
             <Input
@@ -143,6 +272,11 @@ const SignIn = ({ navigation }) => {
               style={styles.input}
               onChangeText={(value) => setPassword(value)}
             />
+            {passwordError && (
+              <Text caption error>
+                {passwordError}
+              </Text>
+            )}
           </Block>
 
           <Button onPress={() => handleLogin()}>
@@ -178,7 +312,7 @@ export default SignIn;
 
 const styles = StyleSheet.create({
   header: {
-    flex: 0.7,
+    flex: 0.6,
     height: "100%",
     width: "100%",
   },

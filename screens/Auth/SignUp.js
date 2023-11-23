@@ -7,12 +7,23 @@ import {
   StatusBar,
   Alert,
 } from "react-native";
+import Constants from "expo-constants";
+import axios from 'axios';
+
+
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Block, Button, Card, Text, Input, Icon } from "../../components";
 import { images, icons, COLORS, SIZES } from "../../constants";
 
 import deviceSize from "../../utils/deviceSize";
 import { useStaturBar } from "../../utils/hooks";
+
+
+
+const {
+  CHINGU_BASE_ENDPOINT,
+} = Constants.expoConfig.extra;
+
 
 // Custom RATION
 const RATION = {
@@ -25,31 +36,60 @@ const RATION = {
 const CONTAINER_HEIGHT = (558 * 100) / SIZES.height / RATION[deviceSize];
 
 const SignUp = ({ navigation }) => {
-  const [name, setName] = useState();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
+  const [confirmPassword, setConfirmPassword] = useState()
   const [validEmail, setValidEmail] = useState(false);
   const [validPassword, setValidPassword] = useState(false);
+  const [validConfirmPassword, setValidConfirmPassword] = useState(false);
 
   useStaturBar("light-content");
 
-  const isValidPassword = Boolean(password && !validPassword);
+  const isValidPassword = Boolean(password && password.length >= 8 && !validPassword);
+  const isConfirmPasswordValid = Boolean(confirmPassword && confirmPassword.length >= 8 && !validConfirmPassword);
 
-  const handleSignup = useCallback(() => {
-    // register with name, email & password
-    Alert.alert(
-      "Thank you!",
-      `Your information: ${name}, ${email} & ${password}`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        { text: "OK", onPress: () => navigation.navigate("SignIn") },
-      ],
-      { cancelable: false }
-    );
-  });
+
+  const handleSignup = useCallback(async () => {
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${CHINGU_BASE_ENDPOINT}/auth/register`, {
+        firstName,
+        lastName,
+        email,
+        password,
+        username,
+        lang: 'en',
+        phone: '09210900799',
+        country: 'PH',
+        client: "mobileApp"
+      });
+      console.log("response:", response)
+      // Handle response here. For example:
+      if (response.status === 200) {
+        Alert.alert("Success", "Registration successful", [
+          { text: "OK", onPress: () => navigation.navigate("SignIn") },
+        ]);
+      } else {
+        Alert.alert("Error", response.data.message);
+      }
+    } catch (error) {
+      if (error.response) {
+        console.log("Server Response:", error.response.data);
+        Alert.alert("Error", error.response.data.message || "An error occurred");
+      } else {
+        Alert.alert("Network Error", "An error occurred during registration");
+        console.error(error);
+      }
+    }
+  }, [firstName, lastName, username, email, password, confirmPassword, navigation]);
+
 
   return (
     <KeyboardAwareScrollView
@@ -115,10 +155,22 @@ const SignUp = ({ navigation }) => {
               flex
               outlined
               color={COLORS.gray}
-              style={{ height: "auto" }}
+              style={{ marginRight: 11, height: "auto" }}
               icon={
                 <Icon
                   name="google"
+                  color={COLORS.black}
+                  style={{ marginVertical: 20 }}
+                />
+              }
+            />
+            <Button
+              flex
+              color='yellow'
+              style={{ height: "auto" }}
+              icon={
+                <Icon
+                  name="kakao"
                   color={COLORS.black}
                   style={{ marginVertical: 20 }}
                 />
@@ -130,18 +182,41 @@ const SignUp = ({ navigation }) => {
             Or connect with your email
           </Text>
 
-          <Block noflex marginBottom={18}>
-            <Text caption bold marginBottom={10}>
-              NAME
+
+          {/* FIRST NAME */}
+          <Block noflex marginBottom={10}>
+            <Text caption bold marginBottom={2}>
+              First Name
             </Text>
             <Input
               style={styles.input}
-              onChangeText={(value) => setName(value)}
+              onChangeText={setFirstName}
             />
           </Block>
-          <Block noflex marginBottom={18}>
+          {/* LAST NAME */}
+          <Block noflex marginBottom={10}>
+            <Text caption bold marginBottom={2}>
+              Last Name
+            </Text>
+            <Input
+              style={styles.input}
+              onChangeText={setLastName}
+            />
+          </Block>
+          {/* USERNAME */}
+          <Block noflex marginBottom={10}>
+            <Text caption bold marginBottom={2}>
+              Username
+            </Text>
+            <Input
+              style={styles.input}
+              onChangeText={setUsername}
+            />
+          </Block>
+          {/* EMAIL */}
+          <Block noflex marginBottom={10}>
             <Block row space="between">
-              <Text caption bold marginBottom={10}>
+              <Text caption bold marginBottom={2}>
                 EMAIL
               </Text>
               {Boolean(email && !validEmail) && (
@@ -163,14 +238,15 @@ const SignUp = ({ navigation }) => {
               pattern='^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$'
             />
           </Block>
-          <Block noflex marginBottom={18}>
+          {/* PASSWORD */}
+          <Block noflex marginBottom={10}>
             <Block row space="between">
-              <Text caption bold marginBottom={10}>
+              <Text caption bold marginBottom={2}>
                 PASSWORD
               </Text>
               {isValidPassword && (
                 <Text caption error marginBottom={10}>
-                  Your password should have 9 characters
+                  Your password should have 8 characters
                 </Text>
               )}
             </Block>
@@ -180,8 +256,39 @@ const SignUp = ({ navigation }) => {
               style={[styles.input, isValidPassword && styles.error]}
               onChangeText={(value) => setPassword(value)}
               onValidation={(isValid) => setValidPassword(isValid)}
-              pattern="^.{9,}$"
+              pattern="^.{8,}$" // At least 8 characters
             />
+
+          </Block>
+          {/* CONFIRMPASSWORD */}
+          <Block noflex marginBottom={15}>
+            <Block row space="between">
+              <Text caption bold marginBottom={2}>
+                CONFIRM PASSWORD
+              </Text>
+              {isConfirmPasswordValid && confirmPassword !== password && (
+                <Text caption error marginBottom={10}>
+                  Passwords do not match
+                </Text>
+              )}
+              {isConfirmPasswordValid && confirmPassword.length < 8 && (
+                <Text caption error marginBottom={10}>
+                  Password should be at least 8 characters
+                </Text>
+              )}
+
+            </Block>
+            <Input
+              value={confirmPassword}
+              secureTextEntry
+              style={[styles.input, isConfirmPasswordValid && confirmPassword !== password && styles.error]}
+              onChangeText={(value) => {
+                setConfirmPassword(value);
+                setValidConfirmPassword(value.length >= 8);
+              }}
+              pattern="^.{8,}$" // At least 8 characters
+            />
+
           </Block>
 
           <Button secondary onPress={() => handleSignup()}>

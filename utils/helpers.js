@@ -55,19 +55,5 @@ export const getHeaderButtons = ({ route }) => {
       return {
         headerShown: false,
       };
-    case "AiVideo":
-      return {
-        headerShown: true,
-        headerLeft: () => (
-          <>
-            <CustomButton />
-          </>
-        ),
-        headerRight: null,
-        headerStyle: {
-          backgroundColor: "#d1d5ed",
-          height: 80,
-        },
-      };
   }
 };

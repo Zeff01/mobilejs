@@ -73,6 +73,8 @@ const text = require("../assets/icons/text.png");
 const apple = require("../assets/icons/apple.png");
 const facebook = require("../assets/icons/facebook.png");
 const google = require("../assets/icons/google.png");
+const kakao = require("../assets/icons/kakao.png");
+
 
 export default {
   calendar,
@@ -133,6 +135,7 @@ export default {
   apple,
   facebook,
   google,
+  kakao,
   reload,
   addUser,
   addPost,
