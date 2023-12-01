@@ -1,6 +1,6 @@
 import React from "react";
 import { Utils } from "expo-ui-kit";
-import Modal from "react-native-modal";
+// import Modal from "react-native-modal";
 import { FlatList } from "react-native-gesture-handler";
 import { Image, StyleSheet, TouchableOpacity } from "react-native";
 
@@ -168,7 +168,7 @@ const Search = ({ navigation, items = mock.STORIES }) => {
           </Block>
         )}
       />
-      <Modal
+      {/* <Modal
         hasBackdrop={false}
         style={{ margin: 0 }}
         animationIn="zoomIn"
@@ -176,7 +176,7 @@ const Search = ({ navigation, items = mock.STORIES }) => {
         isVisible={Boolean(story)}
       >
         <Story story={story} onPress={() => setStory(false)} />
-      </Modal>
+      </Modal> */}
     </Block>
   );
 };

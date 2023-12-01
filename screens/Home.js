@@ -1,6 +1,6 @@
 import React from "react";
 import { Utils } from "expo-ui-kit";
-import Modal from "react-native-modal";
+// import Modal from "react-native-modal";
 import { useNavigation } from "@react-navigation/native";
 import { Image, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 
@@ -71,7 +71,7 @@ const Post = ({ post, ...props }) => {
         }}
       >
         <Block row center marginTop={40} marginBottom={60}>
-          <TouchableOpacity activeOpacity={0.9} onPress={() => {}}>
+          <TouchableOpacity activeOpacity={0.9} onPress={() => { }}>
             <Block row center marginRight={28}>
               <Icon name="heartOutlined" color={COLORS.error} size={14} />
               <Text white title semibold marginLeft={5}>
@@ -93,7 +93,7 @@ const Post = ({ post, ...props }) => {
               </Text>
             </Block>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.9} onPress={() => {}}>
+          <TouchableOpacity activeOpacity={0.9} onPress={() => { }}>
             <Block row center>
               <Icon name="share" color={COLORS.white} size={14} />
               <Text white title semibold marginLeft={5}>
@@ -155,7 +155,7 @@ const Header = ({ stories = [] }) => {
           </TouchableOpacity>
         )}
       />
-      <Modal
+      {/* <Modal
         hasBackdrop={false}
         style={{ margin: 0 }}
         animationIn="zoomIn"
@@ -163,7 +163,7 @@ const Header = ({ stories = [] }) => {
         isVisible={Boolean(story)}
       >
         <Story story={story} onPress={() => setStory(false)} />
-      </Modal>
+      </Modal> */}
     </>
   );
 };
