@@ -1,37 +1,50 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Audio } from "expo-av";
 import { Utils } from "expo-ui-kit";
 import { Camera } from "expo-camera";
-import { Image, StyleSheet, Dimensions } from "react-native";
-import aipic from "../../assets/pictures/aipic.jpeg";
+import { Image, StyleSheet, Dimensions, ImageBackground, Animated } from "react-native";
 
 import { Block, Button, Icon, Text } from "../../components";
 import { COLORS } from "../../constants";
 import { useStaturBar } from "../../utils/hooks";
 import { useOpenAI } from "../../hooks/useOpenAi";
 import MyCamera from "./MyCamera";
+import { View } from "react-native";
 
-const screenWidth = Dimensions.get("window").width;
 
-const AiVideo = ({ navigation }) => {
+const AiVideo = ({ route, navigation }) => {
   const [cameraStatus, setCameraStatus] = useState(false);
-  const [micStatus, setMicStatus] = useState(false);
   const [recording, setRecording] = useState();
-  const [isRecording, setIsRecording] = useState(false);
   const [sound, setSound] = useState();
+  const scale = useRef(new Animated.Value(1)).current;
 
   const {
     transcribedText,
     chatGptResponse,
+    sendTextToChatGpt,
     transcribeAudio,
     isLoading,
     error,
     isTranscribing,
     isFetchingResponse,
     isGeneratingSpeech,
+    cancelRequests,
+    stopAudioPlayback
   } = useOpenAI();
 
+
+  const { assistantData } = route.params;
   useStaturBar();
+
+
+  useEffect(() => {
+    // Call sendTextToChatGpt and set isReadyForUserInput to true after response
+    sendTextToChatGpt(assistantData.instruction).then(() => {
+      console.log('USER COULD TALK NOW')
+    });
+
+  }, [assistantData]);
+
 
   const startRecording = async () => {
     try {
@@ -44,7 +57,11 @@ const AiVideo = ({ navigation }) => {
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       setRecording(recording);
-      setIsRecording(true);
+      Animated.timing(scale, {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }).start();
     } catch (err) {
       console.error("Failed to start recording", err);
     }
@@ -52,33 +69,34 @@ const AiVideo = ({ navigation }) => {
 
   // Stop recording
   const stopRecording = async () => {
-    setIsRecording(false);
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI(); // Get the URI of the recording
     setRecording(uri); // Store only the URI
 
     transcribeAudio(uri); // Pass the URI to transcribeAudio
+    // Revert the press animation
+    Animated.timing(scale, {
+      toValue: 1, // Scale back to 100%
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
   };
 
-  const playRecording = async () => {
-    if (recording) {
-      console.log("Loading Sound");
-      const { sound } = await Audio.Sound.createAsync({ uri: recording }); // Use the URI directly
-      setSound(sound);
 
-      console.log("Playing Sound");
-      await sound.playAsync();
-    }
-  };
 
   useEffect(() => {
-    return sound
-      ? () => {
-          console.log("Unloading Sound");
-          sound.unloadAsync();
-        }
-      : undefined;
+    // Start processing or other logic here if needed
+
+    return () => {
+      // Cleanup when the component unmounts
+      if (sound) {
+        console.log("Unloading Sound");
+        sound.unloadAsync(); // Unload the sound
+      }
+      // cancelRequests(); // Cancel any ongoing requests
+    };
   }, [sound]);
+
 
   useEffect(() => {
     (async () => {
@@ -103,39 +121,21 @@ const AiVideo = ({ navigation }) => {
     setCameraStatus(!cameraStatus);
   };
 
-  const handleMic = () => {
-    setMicStatus(!micStatus);
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  };
-
   return (
-    <Block primary>
-      <Block style={{ flex: 5 }}>
-        <Image source={aipic} style={styles.image} resizeMode="contain" />
-        <MyCamera cameraStatus={cameraStatus} />
-      </Block>
 
-      <Block row center middle marginTop={28} marginBottom={28}>
-        <Button
-          white
-          style={{ height: 48, width: 48 }}
-          onPress={() => handleMic(!micStatus)}
-          icon={
-            <Icon
-              name={micStatus ? "mic" : "micOff"}
-              color={COLORS.black}
-              size={26}
-            />
-          }
-        />
+    <ImageBackground source={{ uri: assistantData?.image }} style={styles.image}>
+
+      <View style={styles.overlay} >
+      </View>
+
+      {/* <MyCamera cameraStatus={cameraStatus} /> */}
+
+
+      <Block row center middle style={{ backgroundColor: COLORS.primary, padding: 32 }}>
         <Button
           color={Utils.rgba(COLORS.white, 0.2)}
           onPress={() => handleVideo(!cameraStatus)}
-          style={{ height: 48, width: 48, marginHorizontal: 28 }}
+          style={{ height: 48, width: 48 }}
           icon={
             <Icon
               size={26}
@@ -144,26 +144,53 @@ const AiVideo = ({ navigation }) => {
             />
           }
         />
+        <Button
+          white
+          style={[styles.micButton, { transform: [{ scale }] }]}
+          onPressIn={startRecording}  // Start recording when button is pressed
+          onPressOut={stopRecording}
+          icon={
+            <Icon
+              name="mic"
+              color={COLORS.black}
+              size={26}
+            />
+          }
+        />
+
 
         <Button
           color={COLORS.error}
           style={{ height: 48, width: 48 }}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            if (sound) {
+              sound.stopAsync();
+              sound.unloadAsync();
+            }
+            cancelRequests();
+            navigation.goBack();
+          }}
           icon={<Icon name="phoneOff" color={COLORS.white} size={26} />}
         />
       </Block>
-    </Block>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   image: {
     backgroundColor: COLORS.white,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,.5)',
+    zIndex: 1,
+    overflow: 'hidden'
+
   },
   responseContainer: {
     margin: 5,
@@ -187,6 +214,11 @@ const styles = StyleSheet.create({
   responseText: {
     fontSize: 16,
     color: "white",
+  },
+  micButton: {
+    height: 60,
+    width: 60,
+    marginHorizontal: 28,
   },
 });
 

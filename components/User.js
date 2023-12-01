@@ -4,25 +4,25 @@ import { Image, StyleSheet } from "react-native";
 import Block from "./Block";
 import Text from "./Text";
 import { COLORS } from "../constants/";
-
+import DefaultPic from '../assets/pictures/default.png'
+import DefaultAIiPic from '../assets/pictures/defaultAi.jpg'
 export default ({ user, white = false }) => {
 
-  if (!user) return null;
-  const userInfo = user && user[0] ? user[0] : null;
 
-  if (!userInfo) return null;
+
   return (
     <Block row>
       <Block noflex marginLeft marginRight>
-        <Image source={userInfo?.avatar} style={styles.avatar} />
-        <Block success style={styles.status} />
+        {user?.image ?
+          <Image source={{ uri: user?.image }} style={styles.avatar} /> :
+          <Image source={DefaultAIiPic} style={styles.avatar} />}
+        {/* <Block success style={styles.status} /> */}
       </Block>
-      <Block>
+      <Block style={{ flex: 1, justifyContent: 'center' }}>
+
+
         <Text title medium white={white}>
-          {userInfo?.name}
-        </Text>
-        <Text title medium gray>
-          {userInfo?.online ? "Online" : "Offline"}
+          {user?.name ? user?.name : "Default Name"}
         </Text>
       </Block>
     </Block>

@@ -1,14 +1,14 @@
 import axios from "axios";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import * as FileSystem from "expo-file-system";
 import { Audio } from "expo-av";
 import Constants from "expo-constants";
 
 const {
-  WHISPER_API_ENDPOINT,
-  TTS_API_ENDPOINT,
-  CHAT_API_ENDPOINT,
+  TRANSCRIPTION_API_ENDPOINT,
+  SPEECH_API_ENDPOINT,
+  COMPLETIONS_API_ENDPOINT,
   OPENAI_API_KEY,
 } = Constants.expoConfig.extra;
 
@@ -21,6 +21,9 @@ export const useOpenAI = () => {
   const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
   const [error, setError] = useState(null);
 
+  const abortControllersRef = useRef([]);
+  const soundRef = useRef(null);
+
   const handleApiRequest = async (
     endpoint,
     method,
@@ -28,6 +31,9 @@ export const useOpenAI = () => {
     headers,
     responseType
   ) => {
+    const abortController = new AbortController();
+    abortControllersRef.current.push(abortController);
+
     try {
       setIsLoading(true);
       const response = await axios({
@@ -36,27 +42,48 @@ export const useOpenAI = () => {
         data,
         headers,
         responseType,
+        signal: abortController.signal,
       });
 
       setIsLoading(false);
-
       return response;
     } catch (error) {
-      const errorMessage = error.response
-        ? error.response.data.error.message
-        : error.message;
+      if (axios.isCancel(error)) {
+        console.log('Request canceled:', error.message);
+      } else {
 
-      setError(errorMessage);
+        let errorMessage = 'An unknown error occurred';
+        if (error.response && error.response.data) {
+          if (error.response.data.error && error.response.data.error.message) {
+            errorMessage = error.response.data.error.message;
+          } else if (typeof error.response.data === 'string') {
+            errorMessage = error.response.data;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        setError(errorMessage);
+        console.error("API Request Error:", errorMessage);
+      }
+
       setIsLoading(false);
-      console.error(
-        "API Request Error:",
-        error.response ? error.response.data : error.message
-      );
     }
+
+
+
   };
+
+  const cancelRequests = () => {
+    abortControllersRef.current.forEach(controller => controller.abort());
+    abortControllersRef.current = []; // Reset the array after aborting
+  };
+
 
   //USER speaks => to TEXT
   const transcribeAudio = async (audioFilePath) => {
+
+
     setIsTranscribing(true);
     setError(null);
     const formData = new FormData();
@@ -75,7 +102,7 @@ export const useOpenAI = () => {
     };
 
     const response = await handleApiRequest(
-      WHISPER_API_ENDPOINT,
+      TRANSCRIPTION_API_ENDPOINT,
       "post",
       formData,
       headers
@@ -89,7 +116,10 @@ export const useOpenAI = () => {
   };
 
   //TEXT => to CHATGPT for a response
-  const sendTextToChatGpt = async (text) => {
+  const sendTextToChatGpt = async (instructions) => {
+    console.log("instructions:", instructions)
+
+
     setIsFetchingResponse(true);
     setError(null);
     const data = {
@@ -97,11 +127,11 @@ export const useOpenAI = () => {
       messages: [
         {
           role: "system",
-          content: "Your system message here.",
+          content: instructions,
         },
         {
           role: "user",
-          content: text,
+          content: instructions,
         },
       ],
     };
@@ -112,11 +142,13 @@ export const useOpenAI = () => {
     };
 
     const response = await handleApiRequest(
-      CHAT_API_ENDPOINT,
+      COMPLETIONS_API_ENDPOINT,
       "post",
       data,
       headers
     );
+    console.log('processing...')
+
     if (response && response.data) {
       setChatGptResponse(response.data.choices[0].message.content);
       const chatResponseText = response.data.choices[0].message.content;
@@ -129,6 +161,7 @@ export const useOpenAI = () => {
   const generateSpeechFromText = async (text, voice) => {
     setIsGeneratingSpeech(true);
     setError(null);
+    console.log('process speaking...')
     const data = {
       model: "tts-1-hd",
       input: text,
@@ -141,13 +174,14 @@ export const useOpenAI = () => {
     };
 
     const response = await handleApiRequest(
-      TTS_API_ENDPOINT,
+      SPEECH_API_ENDPOINT,
       "post",
       data,
       headers,
       "blob"
     );
     if (response && response.status === 200) {
+      console.log('speaking now...')
       const audioPath = `${FileSystem.documentDirectory}sound.m4a`;
 
       await writeToFileSystem(response.data, audioPath);
@@ -187,6 +221,7 @@ export const useOpenAI = () => {
 
     try {
       const { sound } = await Audio.Sound.createAsync({ uri: audioPath });
+      soundRef.current = sound;
       await sound.playAsync();
       // Handle sound completion and release here as needed
     } catch (error) {
@@ -195,7 +230,16 @@ export const useOpenAI = () => {
     }
   };
 
+  const stopAudioPlayback = async () => {
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      soundRef.current = null; // Reset the ref after stopping playback
+    }
+  };
+
+
   return {
+    sendTextToChatGpt,
     transcribedText,
     chatGptResponse,
     isLoading,
@@ -206,5 +250,7 @@ export const useOpenAI = () => {
     isTranscribing,
     isFetchingResponse,
     isGeneratingSpeech,
+    cancelRequests,
+    stopAudioPlayback
   };
 };

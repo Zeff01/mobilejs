@@ -328,17 +328,10 @@ const MyProfile = ({ navigation, user = mock.USER }) => {
   const scrollY = React.useRef(new Animated.Value(0)).current;
 
 
-  const { removeToken, initializeToken } = useAuthStore();
-  const tokenz = useAuthStore((state) => state.token);
-
-
-  const { token, deleteToken } = useToken()
-
-
-
+  const { removeToken } = useAuthStore();
+  const { deleteToken } = useToken()
   const handleLogout = async () => {
-    console.log("TOKEN FROM ZUSTAND", tokenz)
-    console.log("TOKEN FROM SECURESTORE:", token)
+
 
     await removeToken();
     await deleteToken()

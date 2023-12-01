@@ -1,166 +1,112 @@
+
+
 import React from "react";
 import dayjs from "dayjs";
-import { useNavigation } from "@react-navigation/native";
 import { Image, FlatList, StyleSheet, TouchableOpacity } from "react-native";
-
 import { Block, Text } from "../../components";
-import { mock, COLORS } from "../../constants";
-import { useStaturBar } from "../../utils/hooks";
-
-const MESSAGES_TABS = [
-  { id: "direct", title: "Direct Threads" },
-  { id: "group", title: "Group Chat" },
-  { id: "archived", title: "Archived" },
-];
-
-const Header = ({ onPress = () => { } }) => {
-  const [tab, setTab] = React.useState("direct");
-
-  useStaturBar();
-
-  React.useEffect(() => {
-    onPress(tab);
-  }, [tab]);
-
-  const renderTab = (item, index) => {
-    const isSelected = item.id === tab;
-    const isFirst = !index;
-
-    return (
-      <TouchableOpacity activeOpacity={0.8} onPress={() => setTab(item.id)}>
-        <Block noflex center marginRight={28}>
-          <Text
-            title
-            bold
-            gray={!isSelected}
-            black={isSelected}
-            marginLeft={isFirst ? 28 : 0}
-          >
-            {item.title}
-          </Text>
-          {isSelected && (
-            <Block
-              noflex
-              black
-              radius={5}
-              width={5}
-              marginTop={6}
-              minHeight={5}
-              marginLeft={isFirst ? 28 : 0}
-            />
-          )}
-        </Block>
-      </TouchableOpacity>
-    );
-  };
-
-  return (
-    <FlatList
-      horizontal
-      data={MESSAGES_TABS}
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ marginBottom: 28 }}
-      renderItem={({ item, index }) => renderTab(item, index)}
-    />
-  );
-};
-
-const Preview = ({ item, isGroup, filter }) => {
-  const navigation = useNavigation();
+import { COLORS } from "../../constants";
+import Constants from "expo-constants";
+import useToken from '../../hooks/useToken'
+import axios from 'axios';
+import DefaultAIiPic from '../../assets/pictures/defaultAi.jpg'
 
 
-  const serializedItem = JSON.stringify(item);
+
+const Preview = React.memo(({ item, navigation }) => {
+
+  // console.log("item:", item)
+  const sessionData = {
+    _id: item?._id,
+    title: item?.title,
+    createdAt: item.createdAt,
+    openAiAssistantId: item?.openAiAssistantId,
+    openAiThreadId: item?.openAiThreadId,
+    user: {
+      userId: item?.user?._id,
+      email: item?.user?.email,
+      firstName: item?.user?.firstName,
+      photo: item?.user?.photo,
+      username: item?.user?.username
+    },
+
+  }
+
+  const assistantData = {
+    id: item?.assistant?.assistantId,
+    name: item?.assistant?.name,
+    instruction: item?.assistant?.instruction,
+    image: item?.assistant?.image
+  }
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      onPress={() =>
-        navigation.navigate("Chat", {
-          type: filter,
-          userInfo: serializedItem
-        })
-      }
+      onPress={() => navigation.navigate("Chat", { sessionData: sessionData, assistantData: assistantData })}
+      style={styles.previewContainer}
     >
+      <Block row style={{ alignItems: 'center' }}>
+        {assistantData?.image ? <Image source={{ uri: assistantData?.image }} style={styles.avatar} /> : <Image source={DefaultAIiPic} style={styles.avatar} />}
 
-      <Block row marginHorizontal={24} marginBottom={32}>
-        <Block noflex center>
-          {isGroup ? (
-            <>
-              <Block row>
-                {item?.from?.slice(0, 2).map((user, key) => (
-                  <Image
-                    key={`user-${key}`}
-                    source={user?.avatar}
-                    style={[styles.groupAvatar, key && { marginLeft: -5 }]}
-                  />
-                ))}
-              </Block>
-              <Block
-                black
-                center
-                middle
-                style={[styles.groupAvatar, { marginTop: -5 }]}
-              >
-                <Text white small bold>
-                  +{item?.from?.slice(3)?.length}
-                </Text>
-              </Block>
-            </>
-          ) : (
-            <>
-              <Image source={item?.from?.[0].avatar} style={styles.avatar} />
-              <Block
-                noflex
-                gray={!item?.from?.[0].online}
-                success={item?.from?.[0].online}
-                style={styles.online}
-              />
-            </>
-          )}
-        </Block>
-        <Block middle marginLeft={16}>
-          <Text title semibold>
-            {isGroup ? "Close Friends" : item?.from?.[0]?.name}
+
+        <Block marginLeft>
+          <Text style={styles.assistantName}>
+            {assistantData?.name ?? sessionData?.title}
           </Text>
-          <Text title gray>
-            {item?.lastMessage}
+          <Text style={styles.subText}>
+            {sessionData?.title}
           </Text>
         </Block>
-        <Block noflex style={{ alignItems: "flex-end" }}>
-          <Text caption gray right>
-            {dayjs(item?.timestamp).format("hh:mma")}
-          </Text>
-          {item?.unread > 0 && (
-            <Block error center middle radius={6} width={18} maxHeight={18}>
-              <Text small white>
-                {item?.unread}
-              </Text>
-            </Block>
-          )}
-        </Block>
+        <Text style={styles.timestampText}>
+          {dayjs(item?.createdAt).format("hh:mma")} {/* Displaying the timestamp */}
+        </Text>
       </Block>
+
     </TouchableOpacity>
   );
-};
 
-const List = ({ messages = mock.MESSAGES }) => {
-  const [filter, setFilter] = React.useState("direct");
-  const isGroup = filter === "group";
-  const messageLen = isGroup ? 2 : 0;
-  const messagesList = messages?.filter((message) =>
-    filter === "archived"
-      ? message?.archived
-      : message?.from?.length > messageLen
-  );
+});
+
+
+const List = ({ navigation }) => {
+  const [chatSessions, setChatSessions] = React.useState([]);
+  const { token } = useToken()
+
+  const {
+    CHINGU_BASE_ENDPOINT
+  } = Constants.expoConfig.extra;
+
+  const fetchChatSessions = async () => {
+    try {
+      const response = await axios.get(`${CHINGU_BASE_ENDPOINT}/chat-session?client=mobileApp`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      setChatSessions(response.data.records);
+    } catch (error) {
+      console.error('Error fetching chat sessions:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    if (token) {
+      fetchChatSessions();
+    }
+  }, [token]);
+
+
+
 
   return (
-    <Block noflex paddingTop={24}>
-      <Header onPress={(type) => setFilter(type)} />
+    <Block noflex paddingTop={24} marginHorizontal={20}>
       <FlatList
-        data={messagesList}
-        keyExtractor={(item) => `${item.id}`}
+        data={chatSessions}
+        keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <Preview item={item} isGroup={isGroup} filter={filter} />
+
+          <Preview item={item} navigation={navigation} />
         )}
       />
     </Block>
@@ -171,7 +117,6 @@ export default List;
 
 const styles = StyleSheet.create({
   avatar: { borderRadius: 12, height: 48, width: 48 },
-  groupAvatar: { borderRadius: 8, height: 28, width: 28 },
   online: {
     borderColor: COLORS.white,
     borderRadius: 6,
@@ -181,5 +126,38 @@ const styles = StyleSheet.create({
     right: -2,
     top: -2,
     width: 12,
+  },
+  previewContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    backgroundColor: COLORS.white,
+    borderRadius: 5,
+    paddingVertical: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 3,
+  },
+  assistantName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.black,
+    flex: 1,
+  },
+
+  subText: {
+    fontSize: 12,
+    color: COLORS.black,
+    flex: 1,
+    marginRight: 5,
+
+  },
+  timestampText: {
+    color: COLORS.gray,
+    fontSize: 12
   },
 });

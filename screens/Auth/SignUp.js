@@ -59,7 +59,7 @@ const SignUp = ({ navigation }) => {
     }
 
     try {
-      const response = await axios.post(`${CHINGU_BASE_ENDPOINT}/auth/register`, {
+      const response = await axios.post(`${CHINGU_BASE_ENDPOINT}/auth/registerFromApp`, {
         firstName,
         lastName,
         email,
@@ -70,7 +70,6 @@ const SignUp = ({ navigation }) => {
         country: 'PH',
         client: "mobileApp"
       });
-      console.log("response:", response)
       // Handle response here. For example:
       if (response.status === 200) {
         Alert.alert("Success", "Registration successful", [

@@ -6,10 +6,7 @@ import BtnAdd from "../navigation/BtnAdd";
 import BtnNotifications from "../navigation/BtnNotifications";
 import BtnMessage from "../navigation/BtnMessage";
 import BtnOptions from "../navigation/BtnOptions";
-import BtnBack from "../navigation/BtnBack";
-
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
-import CustomButton from "../navigation/CustomButton";
 
 export const getHeaderTitle = (route) => {
   const routeName = getFocusedRouteNameFromRoute(route) ?? "Home";
@@ -25,7 +22,7 @@ export const getHeaderTitle = (route) => {
 };
 
 export const getHeaderButtons = ({ route }) => {
-  const routeName = getFocusedRouteNameFromRoute(route) ?? "Home";
+  const routeName = getFocusedRouteNameFromRoute(route) ?? "Threads";
 
   switch (routeName) {
     case "Home":

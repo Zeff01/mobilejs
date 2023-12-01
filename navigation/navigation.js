@@ -7,15 +7,11 @@ import {
     getFocusedRouteNameFromRoute,
 } from "@react-navigation/native";
 import { Utils } from "expo-ui-kit";
-
-
-
 import useAuthStore from '../store/auth/authStore';
 import BtnSearch from "./BtnSearch";
 import BtnBack from "./BtnBack";
 import BtnOptions from "./BtnOptions";
 import BtnNotifications from "./BtnNotifications";
-
 
 // Import your screens
 import {
@@ -39,15 +35,15 @@ import {
     Home, Events, NewPost, Threads, MyProfile
 } from "../screens/";
 import AiVideo from "../screens/AiModules/AiVideo";
-import AiModules from "../screens/AiModules/AiModulesHome";
 // ... import other screens as needed
 
 
 import hasNotch from '../utils/hasNotch';
 import { COLORS } from '../constants';
-import { Icon, Text } from "../components/";
-import { getHeaderTitle, getHeaderButtons } from "../utils/helpers";
+import { Button, Icon, Text } from "../components/";
+import { getHeaderButtons } from "../utils/helpers";
 import useToken from '../hooks/useToken';
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -81,6 +77,7 @@ const tabOptions = {
         shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 0 },
         elevation: 6,
+        borderWidth: 1,
     },
     tabStyle: {
         borderRadius: 12,
@@ -88,6 +85,7 @@ const tabOptions = {
         minHeight: 38,
         maxWidth: 38,
         marginHorizontal: 16,
+        borderWidth: 1,
     },
 };
 
@@ -108,7 +106,7 @@ const screenOptions = {
         elevation: 1,
     },
     headerTitle: ({ children }) => (
-        <Text center bold caption transform="uppercase">
+        <Text style={{ flex: 1, textAlign: 'center' }} center bold caption transform="uppercase">
             {children}
         </Text>
     ),
@@ -117,10 +115,10 @@ const screenOptions = {
 
 
 const tabsOptions = ({ route }) => {
-    const routeName = getFocusedRouteNameFromRoute(route) ?? "DefaultRouteName";
+    // const routeName = getFocusedRouteNameFromRoute(route) ?? "DefaultRouteName";
 
     return {
-        title: routeName,
+        title: "Threads",
         gestureEnabled: false,
         headerStyle: {
             height: HEADER_HEIGHT,
@@ -155,11 +153,13 @@ function getActiveRouteName(state) {
 const Tabs = ({ navigation, route }) => {
     React.useLayoutEffect(() => {
         navigation.setOptions({
-            headerTitle: (
-                <Text center bold caption transform="uppercase">
-                    {getHeaderTitle(route)}
-                </Text>
-            ),
+            // headerTitle: (
+
+            //     <Text style={{ textAlign: 'center', alignSelf: 'center' }} bold caption transform="uppercase">
+            //         {getHeaderTitle(route)}
+            //     </Text>
+
+            // ),
             ...getHeaderButtons({ navigation, route }),
         });
     }, [navigation, route]);
@@ -200,14 +200,14 @@ const Tabs = ({ navigation, route }) => {
                             );
                     }
                 },
-                tabBarVisible: route.name !== "AiVideo",
+
             })}
             tabBarOptions={tabOptions}
         >
             <Tab.Screen name="Threads" component={Threads} />
-            <Tab.Screen name="AiModules" component={AiModules} />
             <Tab.Screen name="Home" component={Home} />
             <Tab.Screen name="Events" component={Events} />
+
             <Tab.Screen
                 name="NewPost"
                 component={NewPost}
@@ -352,9 +352,9 @@ const MainAppStack = () => (
         <Stack.Screen
             name="Chat"
             component={Chat}
-            options={(props) => ({
+            options={({ navigation, route }) => ({
                 ...screenOptions,
-                ...props,
+                // ...props,
                 headerStyle: {
                     ...screenOptions.headerStyle,
                     backgroundColor: COLORS.black,
@@ -362,17 +362,17 @@ const MainAppStack = () => (
                 headerRight: () => (
                     <Button
                         flex
-                        style={{ height: 48, padding: 10, margin: 10, width: 40 }}
+                        style={{ height: 5, padding: 0, margin: 15, marginRight: 25, width: 43 }}
                         color={Utils.rgba(COLORS.gray, 0.6)}
-                        onPress={() => props?.navigation?.navigate("AiVideo")}
-                        icon={<Icon name="video" color={COLORS.white} />}
+                        onPress={() => {
+                            const { assistantData } = route.params;
+                            navigation?.navigate("AiVideo", { assistant: 'teacher', assistantData: assistantData })
+                        }}
+                        icon={<Icon name="play" color={COLORS.white} />}
                     />
                 ),
-                headerLeft: () => (
-                    <BtnBack
-                        white
-                        onPress={() => props?.navigation?.navigate("Threads")}
-                    />
+                headerLeft: ({ onPress }) => (
+                    <BtnBack onPress={(event) => onPress(event)} />
                 ),
             })}
         />
@@ -416,7 +416,7 @@ const MainAppStack = () => (
             component={AiVideo}
             options={(props) => ({
                 ...props,
-                // headerShown: false,
+                headerShown: false,
             })}
         />
     </Stack.Navigator>
@@ -432,251 +432,15 @@ const AuthStack = () => (
 );
 
 
-const ConditionalScreens = ({ token }) => {
-    if (token) {
-        return (
-            <>
-                {/* MainApp Screens */}
-                <Stack.Screen name="Home" component={Tabs} options={tabsOptions} />
-
-                <Stack.Screen
-                    name="Notifications"
-                    component={Notifications}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        headerRight: null,
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="Friends"
-                    component={Friends}
-                    options={(props) => ({
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                        ...screenOptions,
-                        ...props,
-                    })}
-                />
-                <Stack.Screen
-                    name="Settings"
-                    component={Settings}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        headerRight: () => (
-                            <BtnOptions color="transparent" iconColor={COLORS.gray} />
-                        ),
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="Account"
-                    component={Account}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        headerRight: () => (
-                            <BtnOptions color="transparent" iconColor={COLORS.gray} />
-                        ),
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="User"
-                    component={User}
-                    options={{
-                        headerStyle: { height: HEADER_HEIGHT },
-                        headerRight: () => <BtnOptions iconColor={COLORS.black} />,
-                        headerLeft: ({ onPress }) => {
-                            return <BtnBack black onPress={(event) => onPress(event)} />;
-                        },
-                    }}
-                />
-                <Stack.Screen
-                    name="Search"
-                    component={Search}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        headerRight: null,
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="Comments"
-                    component={Comments}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        headerRight: null,
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="NewEvent"
-                    component={NewEvent}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        title: "Add Event",
-                        headerRight: null,
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="NewEventMap"
-                    component={NewEventMap}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        title: "Add Location Pin",
-                        headerRight: null,
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="NewMessage"
-                    component={NewMessage}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        headerRight: null,
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="Chat"
-                    component={Chat}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        headerStyle: {
-                            ...screenOptions.headerStyle,
-                            backgroundColor: COLORS.black,
-                        },
-                        headerRight: () => (
-                            <Button
-                                flex
-                                style={{ height: 48, padding: 10, margin: 10, width: 40 }}
-                                color={Utils.rgba(COLORS.gray, 0.6)}
-                                onPress={() => props?.navigation?.navigate("AiVideo")}
-                                icon={<Icon name="video" color={COLORS.white} />}
-                            />
-                        ),
-                        headerLeft: () => (
-                            <BtnBack
-                                white
-                                onPress={() => props?.navigation?.navigate("Threads")}
-                            />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="Video"
-                    component={Video}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        title: null,
-                        headerTransparent: true,
-                        headerRight: null,
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="EditAccount"
-                    component={EditAccount}
-                    options={(props) => ({
-                        ...screenOptions,
-                        ...props,
-                        title: null,
-                        headerRight: null,
-                        headerLeft: ({ onPress }) => (
-                            <BtnBack onPress={(event) => onPress(event)} />
-                        ),
-                    })}
-                />
-                <Stack.Screen
-                    name="NewStory"
-                    component={NewStory}
-                    options={(props) => ({
-                        ...props,
-                        headerShown: false,
-                    })}
-                />
-                <Stack.Screen
-                    name="AiVideo"
-                    component={AiVideo}
-                    options={(props) => ({
-                        ...props,
-                        // headerShown: false,
-                    })}
-                />
-            </>
-        );
-    } else {
-        return (
-            <>
-                {/* Auth Screens */}
-                <Stack.Screen name="SignIn" component={SignIn} />
-                <Stack.Screen name="SignUp" component={SignUp} />
-                <Stack.Screen name="ResetPassword" component={ResetPassword} />
-                {/* ... other Auth screens ... */}
-            </>
-        );
-    }
-};
 
 // Main Navigation Container
 export default function Navigation() {
     const token = useAuthStore((state) => state.token);
-    console.log("token from zustand @ navigation:", token)
-    // const { initializeToken } = useAuthStore();
-    // const { token, deleteToken } = useToken()
+    const { initializeToken } = useAuthStore();
 
-
-    // useEffect(() => {
-    //     initializeToken();
-    // }, []);
-
-
-    // useEffect(() => {
-    //     if (token) {
-    //         // User just signed in
-    //         navigationRef.current?.reset({
-    //             index: 0,
-    //             routes: [{ name: 'Home' }],
-    //         });
-    //     } else {
-    //         // User just signed out
-    //         navigationRef.current?.reset({
-    //             index: 0,
-    //             routes: [{ name: 'SignIn' }],
-    //         });
-    //     }
-    // }, [token]);
-
+    useEffect(() => {
+        initializeToken();
+    }, []);
 
     const isSignedIn = Boolean(token);
     console.log("isSignedIn-", isSignedIn)
@@ -705,217 +469,9 @@ export default function Navigation() {
                 routeNameRef.current = currentRouteName;
             }}
         >
-            <Stack.Navigator>
-                {isSignedIn ? (
-                    <>
-                        {/* MainApp Screens */}
-                        <Stack.Screen name="Home" component={Tabs} options={tabsOptions} />
 
-                        <Stack.Screen
-                            name="Notifications"
-                            component={Notifications}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                headerRight: null,
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="Friends"
-                            component={Friends}
-                            options={(props) => ({
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                                ...screenOptions,
-                                ...props,
-                            })}
-                        />
-                        <Stack.Screen
-                            name="Settings"
-                            component={Settings}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                headerRight: () => (
-                                    <BtnOptions color="transparent" iconColor={COLORS.gray} />
-                                ),
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="Account"
-                            component={Account}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                headerRight: () => (
-                                    <BtnOptions color="transparent" iconColor={COLORS.gray} />
-                                ),
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="User"
-                            component={User}
-                            options={{
-                                headerStyle: { height: HEADER_HEIGHT },
-                                headerRight: () => <BtnOptions iconColor={COLORS.black} />,
-                                headerLeft: ({ onPress }) => {
-                                    return <BtnBack black onPress={(event) => onPress(event)} />;
-                                },
-                            }}
-                        />
-                        <Stack.Screen
-                            name="Search"
-                            component={Search}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                headerRight: null,
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="Comments"
-                            component={Comments}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                headerRight: null,
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="NewEvent"
-                            component={NewEvent}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                title: "Add Event",
-                                headerRight: null,
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="NewEventMap"
-                            component={NewEventMap}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                title: "Add Location Pin",
-                                headerRight: null,
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="NewMessage"
-                            component={NewMessage}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                headerRight: null,
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="Chat"
-                            component={Chat}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                headerStyle: {
-                                    ...screenOptions.headerStyle,
-                                    backgroundColor: COLORS.black,
-                                },
-                                headerRight: () => (
-                                    <Button
-                                        flex
-                                        style={{ height: 48, padding: 10, margin: 10, width: 40 }}
-                                        color={Utils.rgba(COLORS.gray, 0.6)}
-                                        onPress={() => props?.navigation?.navigate("AiVideo")}
-                                        icon={<Icon name="video" color={COLORS.white} />}
-                                    />
-                                ),
-                                headerLeft: () => (
-                                    <BtnBack
-                                        white
-                                        onPress={() => props?.navigation?.navigate("Threads")}
-                                    />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="Video"
-                            component={Video}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                title: null,
-                                headerTransparent: true,
-                                headerRight: null,
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="EditAccount"
-                            component={EditAccount}
-                            options={(props) => ({
-                                ...screenOptions,
-                                ...props,
-                                title: null,
-                                headerRight: null,
-                                headerLeft: ({ onPress }) => (
-                                    <BtnBack onPress={(event) => onPress(event)} />
-                                ),
-                            })}
-                        />
-                        <Stack.Screen
-                            name="NewStory"
-                            component={NewStory}
-                            options={(props) => ({
-                                ...props,
-                                headerShown: false,
-                            })}
-                        />
-                        <Stack.Screen
-                            name="AiVideo"
-                            component={AiVideo}
-                            options={(props) => ({
-                                ...props,
-                                // headerShown: false,
-                            })}
-                        />
-                    </>
-                ) : (
-                    <>
-                        {/* Auth Screens */}
-                        <Stack.Screen name="SignIn" component={SignIn} />
-                        <Stack.Screen name="SignUp" component={SignUp} />
-                        <Stack.Screen name="ResetPassword" component={ResetPassword} />
-                        {/* ... other Auth screens ... */}
-                    </>
-                )}
-            </Stack.Navigator>
+            {isSignedIn ? <MainAppStack /> : <AuthStack />}
+
         </NavigationContainer>
     );
 }

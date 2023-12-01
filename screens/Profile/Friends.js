@@ -67,7 +67,7 @@ const Follow = ({ users }) => {
             keyExtractor={(item) => `${item.id}`}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => {}}>
+              <TouchableOpacity onPress={() => { }}>
                 <Block row noflex radius={12} space="between" marginBottom={32}>
                   <Block noflex marginRight>
                     <Image
@@ -132,7 +132,7 @@ export default ({ navigation, contacts = mock.CONTACTS }) => {
               style={styles.input}
               borderColor={COLORS.gray}
               internalRef={searchRef}
-              placeholder="Search in contacts..."
+              placeholder="Search..."
               placeholderTextColor={COLORS.gray}
               onChangeText={(value) => setSearch(value)}
             />

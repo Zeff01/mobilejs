@@ -10,7 +10,6 @@ import deviceSize from "../../utils/deviceSize";
 import { useStaturBar } from "../../utils/hooks";
 import Constants from "expo-constants";
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 // import { GoogleSignin } from '@react-native-google-signin/google-signin';
 // import firebase from 'firebase';
 import KakaoLogins from '@react-native-seoul/kakao-login';
@@ -126,9 +125,6 @@ const SignIn = ({ navigation }) => {
 
       const token = response.data.data.token;
       setToken(token)
-      // saveToken(token);
-
-      // navigation.navigate("Home");
 
     } catch (error) {
       // Handle error (e.g., invalid credentials, server error)
